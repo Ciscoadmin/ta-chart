@@ -7,26 +7,26 @@ Small local Java2D renderer for Jenkins notifications. It creates a PNG doughnut
 Linux/Jenkins:
 
 ```bash
-bash ./chart-renderer/build.sh
+bash ./java/chart-renderer/build.sh
 ```
 
 Windows:
 
 ```powershell
-.\chart-renderer\build.ps1
+.\java\chart-renderer\build.ps1
 ```
 
 The jar is written to:
 
 ```text
-chart-renderer/build/libs/chart-renderer.jar
+java/chart-renderer/build/libs/chart-renderer.jar
 ```
 
 ## Run
 
 ```bash
 java -Xms16m -Xmx64m -Djava.awt.headless=true \
-  -jar chart-renderer/build/libs/chart-renderer.jar \
+  -jar java/chart-renderer/build/libs/chart-renderer.jar \
   --passed 19 \
   --failed 1 \
   --width 400 \
@@ -41,7 +41,7 @@ Optional title:
 
 ```bash
 java -Xms16m -Xmx64m -Djava.awt.headless=true \
-  -jar chart-renderer/build/libs/chart-renderer.jar \
+  -jar java/chart-renderer/build/libs/chart-renderer.jar \
   --passed 120 \
   --failed 7 \
   --title "Test target checkout" \
@@ -52,7 +52,7 @@ PowerShell run example:
 
 ```powershell
 java -Xms16m -Xmx64m "-Djava.awt.headless=true" `
-  -jar .\chart-renderer\build\libs\chart-renderer.jar `
+  -jar .\java\chart-renderer\build\libs\chart-renderer.jar `
   --passed 19 `
   --failed 1 `
   --output chart-output\chart.png
@@ -79,13 +79,13 @@ The renderer exits with a non-zero code when counters are invalid or the output 
 Linux/Jenkins:
 
 ```bash
-bash ./chart-renderer/test.sh
+bash ./java/chart-renderer/test.sh
 ```
 
 Windows:
 
 ```powershell
-.\chart-renderer\test.ps1
+.\java\chart-renderer\test.ps1
 ```
 
 The smoke tests build the jar, render representative edge cases, and verify that each output is a readable PNG with the expected pixel dimensions.
