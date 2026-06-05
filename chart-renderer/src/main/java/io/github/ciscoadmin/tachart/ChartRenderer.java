@@ -92,7 +92,7 @@ public final class ChartRenderer {
 
         drawDoughnut(graphics, centerX, centerY, outerRadius, innerRadius, options);
         drawCenterTotal(graphics, centerX, centerY, outerRadius, options.total());
-        drawFailedPercent(graphics, centerX, centerY, outerRadius, innerRadius, options);
+        drawFailedPercent(graphics, centerX, centerY, outerRadius, innerRadius, legendX, titleHeight, options);
         drawLegend(graphics, legendX, centerY, options);
     }
 
@@ -205,7 +205,7 @@ public final class ChartRenderer {
         drawEmptyLegend(graphics, legendX, centerY);
     }
 
-    private static void drawFailedPercent(Graphics2D graphics, int centerX, int centerY, int outerRadius, int innerRadius, Options options) {
+    private static void drawFailedPercent(Graphics2D graphics, int centerX, int centerY, int outerRadius, int innerRadius, int legendX, int titleHeight, Options options) {
         if (options.failed <= 0 || options.passed <= 0 || options.total() <= 0) {
             return;
         }
@@ -223,12 +223,113 @@ public final class ChartRenderer {
         int y = (int) Math.round(centerY - labelRadius * Math.sin(radians));
 
         String text = Math.round(options.failed * 100.0 / options.total()) + "%";
-        int fontSize = Math.max(12, Math.round(outerRadius * 0.115f));
+        int fontSize = Math.max(14, Math.round(outerRadius * 0.135f));
         graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fontSize));
         graphics.setColor(TEXT_COLOR);
 
         FontMetrics metrics = graphics.getFontMetrics();
-        graphics.drawString(text, x - metrics.stringWidth(text) / 2, y + (metrics.getAscent() - metrics.getDescent()) / 2);
+        if (labelFitsInsideSector(metrics, text, labelRadius, failedAngle, outerRadius, innerRadius)) {
+            drawCenteredText(graphics, text, x, y, metrics);
+            return;
+        }
+
+        drawOutsideFailedPercent(graphics, text, metrics, centerX, centerY, outerRadius, legendX, titleHeight, options, radians);
+    }
+
+    private static boolean labelFitsInsideSector(FontMetrics metrics, String text, double labelRadius, double angleDegrees, int outerRadius, int innerRadius) {
+        int textWidth = metrics.stringWidth(text);
+        int textHeight = metrics.getAscent() + metrics.getDescent();
+        double availableArcLength = outerRadius * Math.toRadians(angleDegrees);
+        int ringThickness = outerRadius - innerRadius;
+
+        return textWidth + 2 <= availableArcLength && textHeight + 4 <= ringThickness;
+    }
+
+    private static void drawOutsideFailedPercent(
+            Graphics2D graphics,
+            String text,
+            FontMetrics metrics,
+            int centerX,
+            int centerY,
+            int outerRadius,
+            int legendX,
+            int titleHeight,
+            Options options,
+            double radians
+    ) {
+        int textWidth = metrics.stringWidth(text);
+        int textHeight = metrics.getAscent() + metrics.getDescent();
+        int labelRadius = outerRadius + 24;
+
+        int rawX = (int) Math.round(centerX + labelRadius * Math.cos(radians));
+        int rawY = (int) Math.round(centerY - labelRadius * Math.sin(radians));
+
+        int minCenterX = 4 + textWidth / 2;
+        int maxCenterX = Math.max(minCenterX, legendX - 12 - textWidth / 2);
+        int minCenterY = Math.max(4 + textHeight / 2, titleHeight + 4 + textHeight / 2);
+        int maxCenterY = Math.max(minCenterY, options.height - 4 - textHeight / 2);
+        int labelCenterX = clamp(rawX, minCenterX, maxCenterX);
+        int labelCenterY = clamp(rawY, minCenterY, maxCenterY);
+
+        double anchorX = centerX + outerRadius * Math.cos(radians);
+        double anchorY = centerY - outerRadius * Math.sin(radians);
+        int horizontalDirection = Math.cos(radians) < 0 ? -1 : 1;
+        if (rawY < minCenterY || rawY > maxCenterY) {
+            int sideX = (int) Math.round(anchorX + horizontalDirection * (textWidth / 2.0 + 16));
+            labelCenterX = clamp(sideX, minCenterX, maxCenterX);
+        }
+        labelCenterX = pushOutsideRing(centerX, centerY, labelCenterX, labelCenterY, textWidth, outerRadius, minCenterX, maxCenterX, horizontalDirection);
+
+        double elbowX = centerX + (outerRadius + 10) * Math.cos(radians);
+        double elbowY = centerY - (outerRadius + 10) * Math.sin(radians);
+        int lineEndX = labelCenterX < anchorX ? labelCenterX + textWidth / 2 + 3 : labelCenterX - textWidth / 2 - 3;
+
+        graphics.setStroke(new BasicStroke(1.4f));
+        graphics.setColor(new Color(0x99, 0x99, 0x99));
+        Path2D.Double leader = new Path2D.Double();
+        leader.moveTo(anchorX, anchorY);
+        leader.lineTo(elbowX, elbowY);
+        leader.lineTo(lineEndX, labelCenterY);
+        graphics.draw(leader);
+
+        graphics.setColor(TEXT_COLOR);
+        drawPercentBadge(graphics, text, labelCenterX, labelCenterY, metrics);
+    }
+
+    private static void drawCenteredText(Graphics2D graphics, String text, int centerX, int centerY, FontMetrics metrics) {
+        graphics.drawString(text, centerX - metrics.stringWidth(text) / 2, centerY + (metrics.getAscent() - metrics.getDescent()) / 2);
+    }
+
+    private static void drawPercentBadge(Graphics2D graphics, String text, int centerX, int centerY, FontMetrics metrics) {
+        int horizontalPadding = 7;
+        int verticalPadding = 3;
+        int textWidth = metrics.stringWidth(text);
+        int textHeight = metrics.getAscent() + metrics.getDescent();
+        int width = textWidth + horizontalPadding * 2;
+        int height = textHeight + verticalPadding * 2;
+        int x = centerX - width / 2;
+        int y = centerY - height / 2;
+
+        graphics.setColor(new Color(0xFF, 0xFF, 0xFF, 0xF2));
+        graphics.fillRoundRect(x, y, width, height, 8, 8);
+        graphics.setStroke(new BasicStroke(1.0f));
+        graphics.setColor(new Color(0xC8, 0xC8, 0xC8));
+        graphics.drawRoundRect(x, y, width, height, 8, 8);
+
+        graphics.setColor(TEXT_COLOR);
+        drawCenteredText(graphics, text, centerX, centerY, metrics);
+    }
+
+    private static int pushOutsideRing(int centerX, int centerY, int labelCenterX, int labelCenterY, int textWidth, int outerRadius, int minCenterX, int maxCenterX, int horizontalDirection) {
+        double dy = labelCenterY - centerY;
+        double safeRadius = outerRadius + textWidth / 2.0 + 6.0;
+        if (Math.hypot(labelCenterX - centerX, dy) >= safeRadius) {
+            return labelCenterX;
+        }
+
+        double requiredDx = Math.abs(dy) >= safeRadius ? 0.0 : Math.sqrt(safeRadius * safeRadius - dy * dy);
+        int shiftedX = (int) Math.round(centerX + horizontalDirection * requiredDx);
+        return clamp(shiftedX, minCenterX, maxCenterX);
     }
 
     private static void drawLegend(Graphics2D graphics, int x, int centerY, Options options) {
@@ -282,6 +383,10 @@ public final class ChartRenderer {
             result.deleteCharAt(result.length() - 1);
         }
         return result + suffix;
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static Map<String, String> parseArgs(String[] args) {
