@@ -73,3 +73,19 @@ java -Xms16m -Xmx64m -Djava.awt.headless=true \
 When both counters are zero, the renderer writes a neutral placeholder chart instead of failing. This keeps Teams/email notifications renderable even when a run produced no test results.
 
 The renderer exits with a non-zero code when counters are invalid or the output cannot be written.
+
+## Smoke Tests
+
+Linux/Jenkins:
+
+```bash
+bash ./chart-renderer/test.sh
+```
+
+Windows:
+
+```powershell
+.\chart-renderer\test.ps1
+```
+
+The smoke tests build the jar, render representative edge cases, and verify that each output is a readable PNG with the expected pixel dimensions.
