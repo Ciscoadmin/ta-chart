@@ -19,13 +19,11 @@ if (Test-Path $testOutputDir) {
 New-Item -ItemType Directory -Path $testClassesDir -Force | Out-Null
 New-Item -ItemType Directory -Path $testOutputDir -Force | Out-Null
 
-Get-ChildItem -Path (Join-Path $scriptDir "src\test\java") -Recurse -Filter *.java |
-    Sort-Object FullName |
-    ForEach-Object { $_.FullName } |
-    Set-Content -Path $testSourcesFile -Encoding ASCII
+$pngAssertions = Join-Path $scriptDir "src\test\java\io\github\ciscoadmin\tachart\PngAssertions.java"
+Set-Content -Path $testSourcesFile -Value $pngAssertions -Encoding ASCII
 
 $testSourcesArg = "@$testSourcesFile"
-javac -encoding UTF-8 -d $testClassesDir $testSourcesArg
+javac --release 17 -encoding UTF-8 -d $testClassesDir $testSourcesArg
 
 function Invoke-RenderCase {
     param(

@@ -13,8 +13,10 @@ bash "${SCRIPT_DIR}/build.sh"
 rm -rf "${TEST_CLASSES_DIR}" "${TEST_OUTPUT_DIR}"
 mkdir -p "${TEST_CLASSES_DIR}" "${TEST_OUTPUT_DIR}"
 
-find "${SCRIPT_DIR}/src/test/java" -name '*.java' | sort > "${TEST_SOURCES_FILE}"
-javac -encoding UTF-8 -d "${TEST_CLASSES_DIR}" @"${TEST_SOURCES_FILE}"
+printf '%s\n' \
+  "${SCRIPT_DIR}/src/test/java/io/github/ciscoadmin/tachart/PngAssertions.java" \
+  > "${TEST_SOURCES_FILE}"
+javac --release 17 -encoding UTF-8 -d "${TEST_CLASSES_DIR}" @"${TEST_SOURCES_FILE}"
 
 render_case() {
   local name="$1"
