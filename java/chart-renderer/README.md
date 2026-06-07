@@ -97,9 +97,11 @@ java -Xms16m -Xmx64m -Djava.awt.headless=true \
 
 When both counters are zero, the renderer writes a neutral placeholder chart instead of failing. This keeps Teams/email notifications renderable even when a run produced no test results.
 
+On constrained image sizes, four-digit counters automatically use a compact numeric legend when dropping `passed` and `failed` meaningfully increases the chart size. Short counters and wider images keep the full labels.
+
 The renderer exits with a non-zero code when counters are invalid or the output cannot be written.
 
-The CLI rejects unknown or duplicate options, non-finite numeric values, overflowing counters, and output dimensions above the renderer's four-million-pixel memory guard.
+The CLI rejects unknown or duplicate options, non-finite numeric values, test totals above `100000`, and output dimensions above the renderer's four-million-pixel memory guard.
 
 ## Architecture
 

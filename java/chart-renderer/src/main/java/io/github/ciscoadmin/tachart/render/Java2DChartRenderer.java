@@ -17,12 +17,14 @@ public final class Java2DChartRenderer {
     private final ChartLayoutCalculator layoutCalculator;
     private final PercentLabelRenderer percentLabelRenderer;
     private final LegendRenderer legendRenderer;
+    private final LegendLayoutPolicy legendLayoutPolicy;
 
     public Java2DChartRenderer() {
         this.theme = ChartTheme.defaultTheme();
         this.layoutCalculator = new ChartLayoutCalculator();
         this.percentLabelRenderer = new PercentLabelRenderer(theme, new PercentLabelPolicy());
         this.legendRenderer = new LegendRenderer(theme);
+        this.legendLayoutPolicy = new LegendLayoutPolicy();
     }
 
     public BufferedImage render(TestSummary summary, RenderOptions options) {
@@ -48,20 +50,49 @@ public final class Java2DChartRenderer {
         graphics.fillRect(0, 0, options.width(), options.height());
 
         int titleHeight = drawTitle(graphics, options);
-        int legendWidth = summary.hasResults()
-                ? legendRenderer.requiredWidth(graphics, summary)
-                : legendRenderer.requiredEmptyWidth(graphics);
-        ChartLayout layout = layoutCalculator.calculate(options, titleHeight, legendWidth);
-
         if (!summary.hasResults()) {
+            int legendWidth = legendRenderer.requiredEmptyWidth(graphics);
+            ChartLayout layout = layoutCalculator.calculate(options, titleHeight, legendWidth);
             drawEmptyChart(graphics, layout, options.width());
             return;
         }
 
+        LegendFormat legendFormat = LegendFormat.FULL;
+        int fullLegendWidth = legendRenderer.requiredWidth(graphics, summary, LegendFormat.FULL);
+        ChartLayout layout = layoutCalculator.calculate(options, titleHeight, fullLegendWidth);
+        int compactLegendWidth = legendRenderer.requiredWidth(
+                graphics,
+                summary,
+                LegendFormat.COMPACT
+        );
+        ChartLayout compactLayout = layoutCalculator.calculate(
+                options,
+                titleHeight,
+                compactLegendWidth
+        );
+        legendFormat = legendLayoutPolicy.choose(summary, layout, compactLayout);
+        if (legendFormat == LegendFormat.COMPACT) {
+            layout = compactLayout;
+        }
+
         drawDoughnut(graphics, layout, summary);
-        drawCenterTotal(graphics, layout.centerX(), layout.centerY(), layout.outerRadius(), summary.total());
+        drawCenterTotal(
+                graphics,
+                layout.centerX(),
+                layout.centerY(),
+                layout.outerRadius(),
+                layout.innerRadius(),
+                summary.total()
+        );
         percentLabelRenderer.draw(graphics, layout, summary, options);
-        legendRenderer.draw(graphics, layout.legendX(), layout.centerY(), options.width(), summary);
+        legendRenderer.draw(
+                graphics,
+                layout.legendX(),
+                layout.centerY(),
+                options.width(),
+                summary,
+                legendFormat
+        );
     }
 
     private int drawTitle(Graphics2D graphics, RenderOptions options) {
@@ -122,6 +153,7 @@ public final class Java2DChartRenderer {
                 layout.centerX(),
                 layout.centerY() - Math.round(layout.outerRadius() * 0.06f),
                 layout.outerRadius(),
+                layout.innerRadius(),
                 0
         );
 
@@ -159,18 +191,23 @@ public final class Java2DChartRenderer {
             int centerX,
             int centerY,
             int outerRadius,
+            int innerRadius,
             long total
     ) {
+        String text = Long.toString(total);
         int fontSize = Math.max(32, Math.round(outerRadius * 0.36f));
-        graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fontSize));
+        int maxTextWidth = Math.round(innerRadius * 1.8f);
+        Font font = new Font(Font.SANS_SERIF, Font.PLAIN, fontSize);
+        FontMetrics metrics = graphics.getFontMetrics(font);
+        while (fontSize > 12 && metrics.stringWidth(text) > maxTextWidth) {
+            fontSize--;
+            font = font.deriveFont((float) fontSize);
+            metrics = graphics.getFontMetrics(font);
+        }
+
+        graphics.setFont(font);
         graphics.setColor(Color.BLACK);
-        TextDrawing.drawCentered(
-                graphics,
-                Long.toString(total),
-                centerX,
-                centerY,
-                graphics.getFontMetrics()
-        );
+        TextDrawing.drawCentered(graphics, text, centerX, centerY, metrics);
     }
 
     private static void applyQualityHints(Graphics2D graphics) {

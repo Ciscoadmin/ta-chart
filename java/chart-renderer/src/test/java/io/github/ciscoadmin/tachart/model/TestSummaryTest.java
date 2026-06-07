@@ -22,7 +22,12 @@ class TestSummaryTest {
     }
 
     @Test
-    void rejectsOverflowingTotal() {
-        assertThrows(IllegalArgumentException.class, () -> new TestSummary(Long.MAX_VALUE, 1));
+    void acceptsMaximumTotal() {
+        assertEquals(100_000, new TestSummary(99_999, 1).total());
+    }
+
+    @Test
+    void rejectsTotalAboveMaximum() {
+        assertThrows(IllegalArgumentException.class, () -> new TestSummary(100_000, 1));
     }
 }

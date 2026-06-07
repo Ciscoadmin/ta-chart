@@ -1,6 +1,8 @@
 package io.github.ciscoadmin.tachart.model;
 
 public record TestSummary(long passed, long failed) {
+    public static final long MAX_TOTAL = 100_000;
+
     public TestSummary {
         if (passed < 0) {
             throw new IllegalArgumentException("--passed must be >= 0");
@@ -9,7 +11,12 @@ public record TestSummary(long passed, long failed) {
             throw new IllegalArgumentException("--failed must be >= 0");
         }
         try {
-            Math.addExact(passed, failed);
+            long total = Math.addExact(passed, failed);
+            if (total > MAX_TOTAL) {
+                throw new IllegalArgumentException(
+                        "passed and failed total must be <= " + MAX_TOTAL
+                );
+            }
         } catch (ArithmeticException exception) {
             throw new IllegalArgumentException("passed and failed total is too large", exception);
         }

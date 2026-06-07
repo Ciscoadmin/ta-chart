@@ -57,6 +57,7 @@ class Java2DChartRendererTest {
 
         int margin = (int) scale * 2;
         assertTrue(isColorAbsentFromTopMargin(image, BADGE_BORDER_COLOR, margin));
+        assertTrue(isColorAbsentFromLeftMargin(image, Color.BLACK, margin));
         assertTrue(isWhiteRightMargin(image, margin));
     }
 
@@ -76,7 +77,7 @@ class Java2DChartRendererTest {
         return Stream.of(
                 Arguments.of(400, 300, 31, 1, ""),
                 Arguments.of(240, 180, 31, 1, ""),
-                Arguments.of(240, 180, Long.MAX_VALUE - 1, 1, "")
+                Arguments.of(240, 180, 99_999, 1, "")
         );
     }
 
@@ -127,6 +128,22 @@ class Java2DChartRendererTest {
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = image.getWidth() - margin; x < image.getWidth(); x++) {
                 if (image.getRGB(x, y) != white) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean isColorAbsentFromLeftMargin(
+            BufferedImage image,
+            Color color,
+            int margin
+    ) {
+        int excludedColor = color.getRGB();
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < margin; x++) {
+                if (image.getRGB(x, y) == excludedColor) {
                     return false;
                 }
             }

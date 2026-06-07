@@ -20,11 +20,11 @@ final class LegendRenderer {
         this.theme = theme;
     }
 
-    int requiredWidth(Graphics2D graphics, TestSummary summary) {
+    int requiredWidth(Graphics2D graphics, TestSummary summary, LegendFormat format) {
         FontMetrics metrics = configureFont(graphics);
         int labelWidth = Math.max(
-                metrics.stringWidth(summary.passed() + " passed"),
-                metrics.stringWidth(summary.failed() + " failed")
+                metrics.stringWidth(passedLabel(summary, format)),
+                metrics.stringWidth(failedLabel(summary, format))
         );
         return BOX_WIDTH + LABEL_GAP + labelWidth;
     }
@@ -34,19 +34,33 @@ final class LegendRenderer {
         return BOX_WIDTH + LABEL_GAP + metrics.stringWidth("No results");
     }
 
-    void draw(Graphics2D graphics, int x, int centerY, int canvasWidth, TestSummary summary) {
+    void draw(
+            Graphics2D graphics,
+            int x,
+            int centerY,
+            int canvasWidth,
+            TestSummary summary,
+            LegendFormat format
+    ) {
         int rowGap = 24;
         int firstY = centerY - rowGap / 2 - BOX_HEIGHT;
 
         configureFont(graphics);
-        drawRow(graphics, x, firstY, canvasWidth, theme.passedColor(), summary.passed() + " passed");
+        drawRow(
+                graphics,
+                x,
+                firstY,
+                canvasWidth,
+                theme.passedColor(),
+                passedLabel(summary, format)
+        );
         drawRow(
                 graphics,
                 x,
                 firstY + rowGap,
                 canvasWidth,
                 theme.failedColor(),
-                summary.failed() + " failed"
+                failedLabel(summary, format)
         );
     }
 
@@ -79,5 +93,17 @@ final class LegendRenderer {
     private static FontMetrics configureFont(Graphics2D graphics) {
         graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, FONT_SIZE));
         return graphics.getFontMetrics();
+    }
+
+    private static String passedLabel(TestSummary summary, LegendFormat format) {
+        return format == LegendFormat.COMPACT
+                ? Long.toString(summary.passed())
+                : summary.passed() + " passed";
+    }
+
+    private static String failedLabel(TestSummary summary, LegendFormat format) {
+        return format == LegendFormat.COMPACT
+                ? Long.toString(summary.failed())
+                : summary.failed() + " failed";
     }
 }
