@@ -48,17 +48,20 @@ public final class Java2DChartRenderer {
         graphics.fillRect(0, 0, options.width(), options.height());
 
         int titleHeight = drawTitle(graphics, options);
-        ChartLayout layout = layoutCalculator.calculate(options, titleHeight);
+        int legendWidth = summary.hasResults()
+                ? legendRenderer.requiredWidth(graphics, summary)
+                : legendRenderer.requiredEmptyWidth(graphics);
+        ChartLayout layout = layoutCalculator.calculate(options, titleHeight, legendWidth);
 
         if (!summary.hasResults()) {
-            drawEmptyChart(graphics, layout);
+            drawEmptyChart(graphics, layout, options.width());
             return;
         }
 
         drawDoughnut(graphics, layout, summary);
         drawCenterTotal(graphics, layout.centerX(), layout.centerY(), layout.outerRadius(), summary.total());
         percentLabelRenderer.draw(graphics, layout, summary, options);
-        legendRenderer.draw(graphics, layout.legendX(), layout.centerY(), summary);
+        legendRenderer.draw(graphics, layout.legendX(), layout.centerY(), options.width(), summary);
     }
 
     private int drawTitle(Graphics2D graphics, RenderOptions options) {
@@ -112,7 +115,7 @@ public final class Java2DChartRenderer {
         fillAndOutline(graphics, failedSegment, theme.failedColor());
     }
 
-    private void drawEmptyChart(Graphics2D graphics, ChartLayout layout) {
+    private void drawEmptyChart(Graphics2D graphics, ChartLayout layout, int canvasWidth) {
         fillAndOutline(graphics, ring(layout), theme.emptyColor());
         drawCenterTotal(
                 graphics,
@@ -131,7 +134,7 @@ public final class Java2DChartRenderer {
         int labelX = layout.centerX() - metrics.stringWidth(label) / 2;
         int labelBaseline = layout.centerY() + Math.round(layout.outerRadius() * 0.22f);
         graphics.drawString(label, labelX, labelBaseline);
-        legendRenderer.drawEmpty(graphics, layout.legendX(), layout.centerY());
+        legendRenderer.drawEmpty(graphics, layout.legendX(), layout.centerY(), canvasWidth);
     }
 
     private void fillAndOutline(Graphics2D graphics, Shape shape, Color color) {

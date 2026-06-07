@@ -17,6 +17,7 @@ class Java2DChartRendererTest {
     private static final Color PASSED_COLOR = new Color(0x8A, 0xD6, 0x8B);
     private static final Color FAILED_COLOR = new Color(0xFF, 0x5A, 0x5A);
     private static final Color EMPTY_COLOR = new Color(0xDD, 0xDD, 0xDD);
+    private static final Color BADGE_BORDER_COLOR = new Color(0xC8, 0xC8, 0xC8);
 
     private final Java2DChartRenderer renderer = new Java2DChartRenderer();
 
@@ -39,6 +40,26 @@ class Java2DChartRendererTest {
         assertTrue(countNonWhitePixels(image) > 10_000);
     }
 
+    @ParameterizedTest
+    @MethodSource("boundedLayoutCases")
+    void keepsBadgeAndLegendInsideCanvas(
+            int width,
+            int height,
+            long passed,
+            long failed,
+            String title
+    ) {
+        double scale = 2.0;
+        BufferedImage image = renderer.render(
+                new TestSummary(passed, failed),
+                new RenderOptions(width, height, scale, 0.63, title)
+        );
+
+        int margin = (int) scale * 2;
+        assertTrue(isColorAbsentFromTopMargin(image, BADGE_BORDER_COLOR, margin));
+        assertTrue(isWhiteRightMargin(image, margin));
+    }
+
     private static Stream<Arguments> renderCases() {
         return Stream.of(
                 Arguments.of(598, 0, "", PASSED_COLOR),
@@ -48,6 +69,14 @@ class Java2DChartRendererTest {
                 Arguments.of(19, 1, "", FAILED_COLOR),
                 Arguments.of(936, 7672, "", FAILED_COLOR),
                 Arguments.of(1, 25, "Smoke", FAILED_COLOR)
+        );
+    }
+
+    private static Stream<Arguments> boundedLayoutCases() {
+        return Stream.of(
+                Arguments.of(400, 300, 31, 1, ""),
+                Arguments.of(240, 180, 31, 1, ""),
+                Arguments.of(240, 180, Long.MAX_VALUE - 1, 1, "")
         );
     }
 
@@ -75,5 +104,33 @@ class Java2DChartRendererTest {
             }
         }
         return count;
+    }
+
+    private static boolean isColorAbsentFromTopMargin(
+            BufferedImage image,
+            Color color,
+            int margin
+    ) {
+        int excludedColor = color.getRGB();
+        for (int y = 0; y < margin; y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                if (image.getRGB(x, y) == excludedColor) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean isWhiteRightMargin(BufferedImage image, int margin) {
+        int white = Color.WHITE.getRGB();
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = image.getWidth() - margin; x < image.getWidth(); x++) {
+                if (image.getRGB(x, y) != white) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

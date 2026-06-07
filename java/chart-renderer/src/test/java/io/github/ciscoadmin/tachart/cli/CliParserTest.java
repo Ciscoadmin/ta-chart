@@ -62,6 +62,11 @@ class CliParserTest {
         assertTrue(parser.isHelpRequested(new String[]{"-h"}));
     }
 
+    @Test
+    void usageContainsCorrectChartTitleExample() {
+        assertTrue(CliParser.usage().contains("--title \"Test target chart\""));
+    }
+
     private static String[] requiredArgs(String extraKey, String extraValue) {
         return new String[]{
                 "--passed", "1",

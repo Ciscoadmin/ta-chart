@@ -62,7 +62,7 @@ public final class CliParser {
         return """
                 Usage:
                   java -Xms16m -Xmx64m -Djava.awt.headless=true -jar chart-renderer.jar \\
-                    --passed 19 --failed 1 --output chart.png [--width 400 --height 300 --scale 2 --title "Test target cart"]
+                    --passed 19 --failed 1 --output chart.png [--width 400 --height 300 --scale 2 --title "Test target chart"]
 
                 Options:
                   --passed   Passed test count. Required.
