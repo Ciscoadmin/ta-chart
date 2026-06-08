@@ -1,3 +1,4 @@
 java/chart-renderer/build/
+java/chart-renderer/target/
 js/chart-service/node_modules/
 chart-output/

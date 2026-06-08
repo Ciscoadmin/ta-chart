@@ -20,7 +20,7 @@ Get-ChildItem -Path $srcDir -Recurse -Filter *.java |
     Set-Content -Path $sourcesFile -Encoding ASCII
 
 $sourcesArg = "@$sourcesFile"
-javac -encoding UTF-8 -d $classesDir $sourcesArg
+javac --release 17 -encoding UTF-8 -d $classesDir $sourcesArg
 jar --create --file $jarPath --main-class io.github.ciscoadmin.tachart.ChartRenderer -C $classesDir .
 
 Write-Host "Built $jarPath"
