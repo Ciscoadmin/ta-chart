@@ -46,7 +46,7 @@ jobs:
         run: bash java/chart-renderer/test.sh
 
       - name: Upload production JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chart-renderer-${{ github.sha }}
           path: java/chart-renderer/build/libs/chart-renderer.jar
