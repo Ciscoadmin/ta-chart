@@ -1,0 +1,49 @@
+name: Java Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Test and publish JAR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: java/chart-renderer/pom.xml
+
+      - name: Run unit tests
+        working-directory: java/chart-renderer
+        run: mvn --batch-mode clean verify
+
+      - name: Build and smoke-test production JAR
+        run: bash java/chart-renderer/test.sh
+
+      - name: Create SHA-256 checksum
+        working-directory: java/chart-renderer/build/libs
+        run: sha256sum chart-renderer.jar > chart-renderer.jar.sha256
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            java/chart-renderer/build/libs/chart-renderer.jar \
+            java/chart-renderer/build/libs/chart-renderer.jar.sha256 \
+            --verify-tag \
+            --generate-notes \
+            --title "$GITHUB_REF_NAME"
