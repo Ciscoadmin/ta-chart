@@ -141,3 +141,22 @@ Windows:
 ```
 
 The smoke scripts build the JAR, execute it for representative edge cases, and verify that each output is a readable PNG with the expected pixel dimensions.
+
+## GitHub Actions
+
+`Java CI` runs the Maven test suite and production JAR smoke tests for Java renderer pull requests and pushes to `main`. The exact production JAR from `build/libs` is uploaded as a workflow artifact for seven days.
+
+Pushing a version tag publishes the tested JAR and its SHA-256 checksum as a GitHub Release:
+
+```bash
+git tag v1.0
+git push origin v1.0
+```
+
+Jenkins can download a pinned release instead of rebuilding the renderer:
+
+```bash
+curl -fsSL \
+  -o chart-renderer.jar \
+  https://github.com/Ciscoadmin/ta-chart/releases/download/v1.0/chart-renderer.jar
+```
